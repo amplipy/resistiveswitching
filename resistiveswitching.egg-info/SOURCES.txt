@@ -1,0 +1,10 @@
+LICENSE
+README.md
+setup.py
+resistiveswitching.egg-info/PKG-INFO
+resistiveswitching.egg-info/SOURCES.txt
+resistiveswitching.egg-info/dependency_links.txt
+resistiveswitching.egg-info/top_level.txt
+resistiveswtiching/__init__.py
+resistiveswtiching/core.py
+resistiveswtiching/modules.py

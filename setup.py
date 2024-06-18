@@ -10,7 +10,7 @@ setup(
     packages=find_packages(),
     description='typical analysis of time-traces, e.g. breakdown spectroscopy',
     long_description=open('README.md').read(),
-    install_requires=['pywt','numpy'],
+    install_requires=[],
     url='https://github.com/amplifilo/resistiveswitching',
     license='MIT',
     classifiers=[
