@@ -2,33 +2,35 @@ from .modules import *
 
 
 class TimeTrace:
-    def __init__(self, fname=None, fromcdf=None, savecdf=0):
-        pass
+    def __init__(self, trace, time=None):
+        self.trace = trace
+        self.time = time
 
-    @classmethod
-    def get_fft_values(y_values, T, N, f_s):
+    def get_fft_values(self, T, N, f_s):
         N2 = 2 ** (int(np.log2(N)) + 1) # round up to next highest power of 2
         f_values = np.linspace(0.0, 1.0/(2.0*T), N2//2)
-        fft_values_ = fft(y_values)
+        fft_values_ = fft(self.trace)
         fft_values = 2.0/N2 * np.abs(fft_values_[0:N2//2])
         return f_values, fft_values
 
-    def plot_wavelet(time, signal, scales, 
-                    waveletname = 'cmor', 
-                    cmap = plt.cm.seismic, 
-                    title = 'Wavelet Transform (Power Spectrum) of signal', 
-                    ylabel = 'Period (years)', 
-                    xlabel = 'Time'):
-        
+    def plot_wavelet(self, scales, 
+                    waveletname = 'cmor',
+                    **kwargs): 
+                    
+        if self.time is None:
+            time = kwargs["time"]
+        else:
+            time = self.time
+
         dt = time[1] - time[0]
-        [coefficients, frequencies] = pywt.cwt(signal, scales, waveletname, dt)
+        [coefficients, frequencies] = pywt.cwt(self.trace, scales, waveletname, dt)
         power = (abs(coefficients)) ** 2
         period = 1. / frequencies
         levels = [0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8]
         contourlevels = np.log2(levels)
         
         fig, ax = plt.subplots(figsize=(15, 10))
-        im = ax.contourf(time, np.log2(period), np.log2(power), contourlevels, extend='both',cmap=cmap)
+        im = ax.contourf(time, np.log2(period), np.log2(power), contourlevels, extend='both')
         
         ax.set_title(title, fontsize=20)
         ax.set_ylabel(ylabel, fontsize=18)
@@ -43,16 +45,17 @@ class TimeTrace:
         
         cbar_ax = fig.add_axes([0.95, 0.5, 0.03, 0.25])
         fig.colorbar(im, cax=cbar_ax, orientation="vertical")
-        plt.show()
+        
 
-    def get_ave_values(xvalues, yvalues, n = 5):
-        signal_length = len(xvalues)
+    def get_ave_values(self, xvalues, yvalues, n = 5):
+        
+        signal_length = len(self.time)
         if signal_length % n == 0:
             padding_length = 0
         else:
             padding_length = n - signal_length//n % n
-        xarr = np.array(xvalues)
-        yarr = np.array(yvalues)
+        xarr = np.array(self.time)
+        yarr = np.array(self.trace)
         xarr.resize(signal_length//n, n)
         yarr.resize(signal_length//n, n)
         xarr_reshaped = xarr.reshape((-1,n))
@@ -63,9 +66,9 @@ class TimeTrace:
 
 
     
-    def plot_signal_plus_average(time, signal, average_over = 5):
+    def plot_signal_plus_average(self, average_over = 5):
         fig, ax = plt.subplots(figsize=(15, 3))
-        time_ave, signal_ave = get_ave_values(time, signal, average_over)
+        time_ave, signal_ave = get_ave_values(self.time, self.signal, average_over)
         ax.plot(time, signal, label='signal')
         ax.plot(time_ave, signal_ave, label = 'time average (n={})'.format(5))
         ax.set_xlim([time[0], time[-1]])
@@ -73,26 +76,25 @@ class TimeTrace:
         ax.set_title('Signal + Time Average', fontsize=18)
         ax.set_xlabel('Time', fontsize=18)
         ax.legend()
-        plt.show()
         
-    def get_fft_values(y_values, T, N, f_s):
+    
+    def get_fft_values(self, T, N, f_s):
         f_values = np.linspace(0.0, 1.0/(2.0*T), N//2)
-        fft_values_ = fft(y_values)
+        fft_values_ = fft(self.trace)
         fft_values = 2.0/N * np.abs(fft_values_[0:N//2])
         return f_values, fft_values
     
-    def plot_fft_plus_power(time, signal):
-        dt = time[1] - time[0]
-        N = len(signal)
+    def plot_fft_plus_power(self):
+        dt = self.time[1] - self.time[0]
+        N = len(self.trace)
         fs = 1/dt
         
         fig, ax = plt.subplots(figsize=(15, 3))
-        variance = np.std(signal)**2
-        f_values, fft_values = get_fft_values(signal, dt, N, fs)
+        variance = np.std(self.trace)**2
+        f_values, fft_values = self.get_fft_values(self.signal, dt, N, fs)
         fft_power = variance * abs(fft_values) ** 2     # FFT power spectrum
         ax.plot(f_values, fft_values, 'r-', label='Fourier Transform')
         ax.plot(f_values, fft_power, 'k--', linewidth=1, label='FFT Power Spectrum')
         ax.set_xlabel('Frequency [Hz / year]', fontsize=18)
         ax.set_ylabel('Amplitude', fontsize=18)
         ax.legend()
-        plt.show()
